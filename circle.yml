@@ -26,3 +26,10 @@ dependencies:
 test:
   override:
     - make test
+
+deployment:
+  master:
+    branch: master
+    owner: stormcat24
+    commands:
+      - cp -R bin/* $CIRCLE_ARTIFACTS/

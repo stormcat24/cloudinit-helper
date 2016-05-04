@@ -5,3 +5,5 @@ import:
     version: v1.1.23
     subpackages:
       - aws
+  - package: github.com/stretchr/testify
+
