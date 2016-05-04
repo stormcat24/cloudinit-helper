@@ -17,6 +17,9 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/stormcat24/cloudinit-helper/client/meta"
+	"errors"
+	"github.com/stormcat24/cloudinit-helper/client/ec2"
+	"os"
 )
 
 var (
@@ -35,46 +38,101 @@ var ec2Cmd = &cobra.Command{
 			UrlBase: metaUrlBase,
 		}
 	},
-	Run: func(cmd *cobra.Command, args []string) {
-	},
 }
 
 var ec2CmdRegion = &cobra.Command{
 	Use:   "region",
 	Short: "Get AWS Region in which the instance belongs.",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		c := meta.NewClient(&metaConfig)
 		az, err := c.GetAvailabilityZone()
 		if err != nil {
-			cmd.Out().Write([]byte(err.Error()))
+			return err
 		}
-		cmd.Printf(az.GetRegion())
+		cmd.SetOutput(os.Stdout)
+		cmd.Println(az.GetRegion())
+		return nil
 	},
 }
 
 var ec2CmdAz = &cobra.Command{
 	Use:   "az",
 	Short: "Get AWS Availability Zone in which the instance belongs.",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		c := meta.NewClient(&metaConfig)
 		az, err := c.GetAvailabilityZone()
 		if err != nil {
-			cmd.Out().Write([]byte(err.Error()))
+			return err
 		}
-		cmd.Printf(az.Name)
+		cmd.SetOutput(os.Stdout)
+		cmd.Println(az.Name)
+		return nil
 	},
 }
 
 var ec2CmdInstanceID = &cobra.Command{
 	Use:   "instance_id",
 	Short: "Get InstanceID of this EC2 instance.",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		c := meta.NewClient(&metaConfig)
 		id, err := c.GetInstanceID()
 		if err != nil {
-			cmd.Out().Write([]byte(err.Error()))
+			return err
 		}
-		cmd.Printf(id)
+		cmd.SetOutput(os.Stdout)
+		cmd.Println(id)
+		return nil
+	},
+}
+
+var ec2CmdDescribeInstanceTag = &cobra.Command{
+	Use:   "describe-instance-tag",
+	Short: "Describe EC2 Instance Tag",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		region, err := cmd.Flags().GetString("region")
+		if err != nil {
+			return err
+		}
+
+		if region == "" {
+			return errors.New("--region is not specified.")
+		}
+
+		instanceId, err := cmd.Flags().GetString("instance-id")
+		if err != nil {
+			return err
+		}
+
+		if instanceId == "" {
+			return errors.New("--instance-id is not specified.")
+		}
+
+		tag, err := cmd.Flags().GetString("tag")
+		if err != nil {
+			return err
+		}
+
+		if tag == "" {
+			return errors.New("--tag is not specified.")
+		}
+
+		client := ec2.NewClient(region)
+		result, err := client.DescribeInstance(instanceId)
+		if err != nil {
+			return err
+		}
+
+		for _, t := range result.Tags {
+			if tag == *t.Key {
+				cmd.SetOutput(os.Stdout)
+				cmd.Println(*t.Value)
+				return nil
+			}
+		}
+
+		cmd.Printf("Tag=%v is not found at %v", tag, instanceId)
+
+		return nil
 	},
 }
 
@@ -83,8 +141,13 @@ func init() {
 
 	ec2Cmd.PersistentFlags().StringVarP(&metaUrlBase, "meta-url-base", "", "http://169.254.169.254", "Instance Meta Data API URL Base")
 
+	ec2CmdDescribeInstanceTag.Flags().StringP("region", "r", "", "Target Region")
+	ec2CmdDescribeInstanceTag.Flags().StringP("instance-id", "i", "", "Target Instance ID")
+	ec2CmdDescribeInstanceTag.Flags().StringP("tag", "t", "", "Target Tag")
+
 	ec2Cmd.AddCommand(ec2CmdRegion)
 	ec2Cmd.AddCommand(ec2CmdAz)
 	ec2Cmd.AddCommand(ec2CmdInstanceID)
+	ec2Cmd.AddCommand(ec2CmdDescribeInstanceTag)
 
 }

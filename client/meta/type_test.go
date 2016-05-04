@@ -12,5 +12,5 @@ func TestGetRegion(t *testing.T) {
 		Name: "ap-northeast-1a",
 	}
 
-	assert.Equal(t, "ap-northeast", az.GetRegion())
+	assert.Equal(t, "ap-northeast-1", az.GetRegion())
 }

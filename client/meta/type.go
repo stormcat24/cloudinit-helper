@@ -8,9 +8,9 @@ type AvailabilityZone struct {
 
 func (z *AvailabilityZone) GetRegion() string {
 
-	regionPattern := regexp.MustCompile(`^(.+)-(.+)$`)
+	regionPattern := regexp.MustCompile(`^(.+-[0-9])[a-z]$`)
 	tokens := regionPattern.FindStringSubmatch(z.Name)
-	if len(tokens) == 3 {
+	if len(tokens) == 2 {
 		return tokens[1]
 	}
 
