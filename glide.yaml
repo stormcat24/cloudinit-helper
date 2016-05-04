@@ -1,5 +1,6 @@
 package: github.com/stormcat24/cloudinit-helper
 import:
+  - package: github.com/spf13/cobra
   - package: github.com/aws/aws-sdk-go
     version: v1.1.23
     subpackages:
