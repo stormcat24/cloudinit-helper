@@ -42,7 +42,7 @@ func TestGetAvailabilityZone(t *testing.T) {
 	t.Logf("%+v", result)
 
 	assert.Equal(t, "ap-northeast-1a", result.Name)
-	assert.Equal(t, "ap-northeast", result.GetRegion())
+	assert.Equal(t, "ap-northeast-1", result.GetRegion())
 }
 
 func TestGetInstanceID(t *testing.T) {
