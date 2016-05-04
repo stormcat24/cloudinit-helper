@@ -15,38 +15,76 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"github.com/stormcat24/cloudinit-helper/client/meta"
+)
+
+var (
+	metaUrlBase string
+	metaConfig meta.Config
 )
 
 // ec2Cmd represents the ec2 command
 var ec2Cmd = &cobra.Command{
 	Use:   "ec2",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Get EC2 Information",
+	Long: `Get EC2 Information at the instance.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		metaConfig = meta.Config{
+			UseMock: UseMock,
+			UrlBase: metaUrlBase,
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("ec2 called")
+	},
+}
+
+var ec2CmdRegion = &cobra.Command{
+	Use:   "region",
+	Short: "Get AWS Region in which the instance belongs.",
+	Run: func(cmd *cobra.Command, args []string) {
+		c := meta.NewClient(&metaConfig)
+		az, err := c.GetAvailabilityZone()
+		if err != nil {
+			cmd.Out().Write([]byte(err.Error()))
+		}
+		cmd.Printf(az.GetRegion())
+	},
+}
+
+var ec2CmdAz = &cobra.Command{
+	Use:   "az",
+	Short: "Get AWS Availability Zone in which the instance belongs.",
+	Run: func(cmd *cobra.Command, args []string) {
+		c := meta.NewClient(&metaConfig)
+		az, err := c.GetAvailabilityZone()
+		if err != nil {
+			cmd.Out().Write([]byte(err.Error()))
+		}
+		cmd.Printf(az.Name)
+	},
+}
+
+var ec2CmdInstanceID = &cobra.Command{
+	Use:   "instance_id",
+	Short: "Get InstanceID of this EC2 instance.",
+	Run: func(cmd *cobra.Command, args []string) {
+		c := meta.NewClient(&metaConfig)
+		id, err := c.GetInstanceID()
+		if err != nil {
+			cmd.Out().Write([]byte(err.Error()))
+		}
+		cmd.Printf(id)
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(ec2Cmd)
 
-	// Here you will define your flags and configuration settings.
+	ec2Cmd.PersistentFlags().StringVarP(&metaUrlBase, "meta-url-base", "", "http://169.254.169.254", "Instance Meta Data API URL Base")
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// ec2Cmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// ec2Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	ec2Cmd.AddCommand(ec2CmdRegion)
+	ec2Cmd.AddCommand(ec2CmdAz)
+	ec2Cmd.AddCommand(ec2CmdInstanceID)
 
 }

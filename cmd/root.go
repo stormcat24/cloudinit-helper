@@ -39,6 +39,10 @@ to quickly create a Cobra application.`,
 //	Run: func(cmd *cobra.Command, args []string) { },
 }
 
+var (
+	UseMock bool
+)
+
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -59,6 +63,9 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	// Global Flags
+	RootCmd.PersistentFlags().BoolVarP(&UseMock, "use-mock", "m", false, "Use mock without sending http request")
 }
 
 // initConfig reads in config file and ENV variables if set.
