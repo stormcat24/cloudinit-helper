@@ -1,3 +1,6 @@
+install-go:
+	sh script/install-go.sh 1.6.2
+
 install-glide:
 	sh script/install-glide.sh 0.8.3
 
@@ -16,3 +19,6 @@ go-test:
 
 go-vet:
 	go vet $(shell go list  ./... | grep -v vendor)
+
+build:
+	GOOS=$(ARCH) GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o bin/cloudinit-helper main.go

@@ -1,0 +1,28 @@
+general:
+  build_dir: ../.go_workspace/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+
+machine:
+  environment:
+    GOROOT_BOOTSTRAP: /usr/local/go
+    GOPATH: "${HOME}/.go_workspace"
+    PATH: "/usr/local/go/bin:${PATH}"
+  post:
+    - rm -rf ".go_workspace/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+    - mkdir -p ".go_workspace/src/github.com/$CIRCLE_PROJECT_USERNAME"
+    - mv $CIRCLE_PROJECT_REPONAME ".go_workspace/src/github.com/$CIRCLE_PROJECT_USERNAME/"
+    - mkdir -p $CIRCLE_PROJECT_REPONAME
+
+dependencies:
+  cache_directories:
+    - "~/.glide"
+
+  pre:
+    - make install-go
+    - make deps
+
+  override:
+    - make build
+
+test:
+  override:
+    - make test
