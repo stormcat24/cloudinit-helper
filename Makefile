@@ -22,3 +22,7 @@ go-vet:
 
 build:
 	GOOS=$(ARCH) GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o bin/cloudinit-helper main.go
+
+mock:
+	mockgen -source client/ec2/client.go -package ec2 -destination client/ec2/client_mock.go
+	mockgen -source client/ec2meta/client.go -package ec2meta -destination client/ec2meta/client_mock.go

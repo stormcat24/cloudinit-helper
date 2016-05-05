@@ -16,15 +16,11 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stormcat24/cloudinit-helper/client/meta"
+	"github.com/stormcat24/cloudinit-helper/client/ec2meta"
 	"errors"
 	"github.com/stormcat24/cloudinit-helper/client/ec2"
 	"os"
-)
-
-var (
-	metaUrlBase string
-	metaConfig meta.Config
+	"encoding/json"
 )
 
 // ec2Cmd represents the ec2 command
@@ -32,79 +28,38 @@ var ec2Cmd = &cobra.Command{
 	Use:   "ec2",
 	Short: "Get EC2 Information",
 	Long: `Get EC2 Information at the instance.`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		metaConfig = meta.Config{
-			UseMock: UseMock,
-			UrlBase: metaUrlBase,
-		}
-	},
 }
 
-var ec2CmdRegion = &cobra.Command{
-	Use:   "region",
-	Short: "Get AWS Region in which the instance belongs.",
+var ec2CmdMeta = &cobra.Command{
+	Use:   "meta",
+	Short: "Get EC2 Metadata in which the instance belongs.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := meta.NewClient(&metaConfig)
-		az, err := c.GetAvailabilityZone()
+		c := ec2meta.NewClient(UseMock)
+		doc, err := c.GetInstanceIdentityDocument()
 		if err != nil {
 			return err
 		}
+
+		data, err := json.Marshal(doc)
+		if err != nil {
+			return err
+		}
+
 		cmd.SetOutput(os.Stdout)
-		cmd.Println(az.GetRegion())
+		cmd.Println(string(data))
 		return nil
 	},
 }
 
-var ec2CmdAz = &cobra.Command{
-	Use:   "az",
-	Short: "Get AWS Availability Zone in which the instance belongs.",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		c := meta.NewClient(&metaConfig)
-		az, err := c.GetAvailabilityZone()
-		if err != nil {
-			return err
-		}
-		cmd.SetOutput(os.Stdout)
-		cmd.Println(az.Name)
-		return nil
-	},
-}
-
-var ec2CmdInstanceID = &cobra.Command{
-	Use:   "instance_id",
-	Short: "Get InstanceID of this EC2 instance.",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		c := meta.NewClient(&metaConfig)
-		id, err := c.GetInstanceID()
-		if err != nil {
-			return err
-		}
-		cmd.SetOutput(os.Stdout)
-		cmd.Println(id)
-		return nil
-	},
-}
-
-var ec2CmdDescribeInstanceTag = &cobra.Command{
-	Use:   "describe-instance-tag",
+var ec2CmdDescribeTag = &cobra.Command{
+	Use:   "describe-tag",
 	Short: "Describe EC2 Instance Tag",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		region, err := cmd.Flags().GetString("region")
+
+		c := ec2meta.NewClient(UseMock)
+		doc, err := c.GetInstanceIdentityDocument()
 		if err != nil {
 			return err
-		}
-
-		if region == "" {
-			return errors.New("--region is not specified.")
-		}
-
-		instanceId, err := cmd.Flags().GetString("instance-id")
-		if err != nil {
-			return err
-		}
-
-		if instanceId == "" {
-			return errors.New("--instance-id is not specified.")
 		}
 
 		tag, err := cmd.Flags().GetString("tag")
@@ -116,8 +71,8 @@ var ec2CmdDescribeInstanceTag = &cobra.Command{
 			return errors.New("--tag is not specified.")
 		}
 
-		client := ec2.NewClient(region)
-		result, err := client.DescribeInstance(instanceId)
+		client := ec2.NewClient(doc.Region)
+		result, err := client.DescribeInstance(doc.InstanceID)
 		if err != nil {
 			return err
 		}
@@ -130,7 +85,7 @@ var ec2CmdDescribeInstanceTag = &cobra.Command{
 			}
 		}
 
-		cmd.Printf("Tag=%v is not found at %v", tag, instanceId)
+		cmd.Printf("Tag=%v is not found at %v", tag, doc.InstanceID)
 
 		return nil
 	},
@@ -139,15 +94,9 @@ var ec2CmdDescribeInstanceTag = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(ec2Cmd)
 
-	ec2Cmd.PersistentFlags().StringVarP(&metaUrlBase, "meta-url-base", "", "http://169.254.169.254", "Instance Meta Data API URL Base")
+	ec2CmdDescribeTag.Flags().StringP("tag", "t", "", "Target Tag")
 
-	ec2CmdDescribeInstanceTag.Flags().StringP("region", "r", "", "Target Region")
-	ec2CmdDescribeInstanceTag.Flags().StringP("instance-id", "i", "", "Target Instance ID")
-	ec2CmdDescribeInstanceTag.Flags().StringP("tag", "t", "", "Target Tag")
-
-	ec2Cmd.AddCommand(ec2CmdRegion)
-	ec2Cmd.AddCommand(ec2CmdAz)
-	ec2Cmd.AddCommand(ec2CmdInstanceID)
-	ec2Cmd.AddCommand(ec2CmdDescribeInstanceTag)
+	ec2Cmd.AddCommand(ec2CmdMeta)
+	ec2Cmd.AddCommand(ec2CmdDescribeTag)
 
 }
