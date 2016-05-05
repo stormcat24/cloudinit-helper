@@ -26,13 +26,12 @@ import (
 // ec2Cmd represents the ec2 command
 var ec2Cmd = &cobra.Command{
 	Use:   "ec2",
-	Short: "Get EC2 Information",
-	Long: `Get EC2 Information at the instance.`,
+	Short: "Get EC2 Instance own information",
 }
 
 var ec2CmdMeta = &cobra.Command{
 	Use:   "meta",
-	Short: "Get EC2 Metadata in which the instance belongs.",
+	Short: "Get metadata of EC2 Instance own information(JSON)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := ec2meta.NewClient(UseMock)
 		doc, err := c.GetInstanceIdentityDocument()

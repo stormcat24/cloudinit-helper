@@ -27,16 +27,10 @@ var cfgFile string
 // This represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "cloudinit-helper",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-// Uncomment the following line if your bare application
-// has an action associated with it:
-//	Run: func(cmd *cobra.Command, args []string) { },
+	Short: "EC2 Cloudinit helper tool",
+	Long: `cloudinit-helper is a tool to help getting own instance information.
+	aws-cli is very good tool. But this is too large size, so it takes long time to install each ec2 instance.
+	`,
 }
 
 var (
