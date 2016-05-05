@@ -8,19 +8,23 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 )
 
 func NewClient(region string) Client {
 	// TODO mock
-
+	ses := session.New()
 	cred := credentials.NewChainCredentials([]credentials.Provider{
 		&credentials.EnvProvider{},
-		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
-		&ec2rolecreds.EC2RoleProvider{ExpiryWindow: 5 * time.Minute},
+		&ec2rolecreds.EC2RoleProvider{
+			Client: ec2metadata.New(ses),
+			ExpiryWindow: 5 * time.Minute,
+		},
 	})
-	conf := aws.NewConfig().WithCredentials(cred).WithMaxRetries(aws.UseServiceDefaultRetries).WithRegion(region)
+	ses.Config.Credentials = cred
+	ses.Config.WithMaxRetries(aws.UseServiceDefaultRetries).WithRegion(region)
 
 	return ClientImpl{
-		service: ec2.New(session.New(conf)),
+		service: ec2.New(ses),
 	}
 }
